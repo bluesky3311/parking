@@ -259,9 +259,12 @@
             syncStatusBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-amber-400/20 text-amber-300 border border-amber-400/40 animate-pulse';
             
             try {
-                const response = await fetch(API_URL);
-                if (!response.ok) throw new Error('連線失敗');
-                const data = await response.json();
+                const response = await fetch(API_URL, {
+    method: 'GET',
+    redirect: 'follow'
+});
+if (!response.ok) throw new Error('連線失敗');
+const data = await response.json();
                 
                 if (Array.isArray(data) && data.length > 0) {
                     venues = data.map((item, index) => ({
