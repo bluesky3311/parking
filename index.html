@@ -1,30 +1,19 @@
 <!DOCTYPE html>
-<html lang="zh-Hant-TW" class="dark">
+<html lang="zh-TW" class="h-full">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>場地快速簽到導航</title>
-    <!-- 引入 Tailwind CSS -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>外場停車場巡檢與簽到導航系統</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 引入 Google Fonts Noto Sans TC 與 Inter -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&family=Noto+Sans+TC:wght@500;700;900&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
-            darkMode: 'class',
             theme: {
                 extend: {
-                    fontFamily: {
-                        sans: ['"Noto Sans TC"', 'Inter', 'sans-serif'],
-                        mono: ['Inter', 'monospace'],
-                    },
                     colors: {
                         surface: {
-                            950: '#090D16',
-                            900: '#0F172A',
-                            800: '#1E293B',
-                            700: '#334155',
+                            900: '#18181b',
+                            950: '#09090b',
                         }
                     }
                 }
@@ -32,245 +21,194 @@
         }
     </script>
 </head>
-<body class="bg-surface-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-amber-400 selection:text-slate-950">
+<body class="h-full bg-slate-950 text-slate-100 flex flex-col font-sans antialiased selection:bg-amber-400 selection:text-slate-950">
 
-    <!-- 頂部高對比導航列 -->
-    <header class="sticky top-0 z-30 bg-surface-900/95 backdrop-blur-md border-b-2 border-slate-800 shadow-lg">
-        <div class="max-w-3xl mx-auto px-4 py-3.5 flex items-center justify-between gap-2">
+    <!-- 頂部標題列 -->
+    <header class="bg-surface-900 border-b border-slate-800 sticky top-0 z-30 shadow-md">
+        <div class="max-w-4xl mx-auto px-4 py-3.5 flex items-center justify-between">
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center shadow-md shadow-amber-400/20 shrink-0">
-                    <!-- 定位簽到圖示 -->
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
-                    </svg>
+                <div class="w-10 h-10 rounded-xl bg-amber-400 flex items-center justify-center text-slate-950 font-black shadow-lg shadow-amber-400/20">
+                    🅿️
                 </div>
                 <div>
-                    <h1 class="text-xl sm:text-2xl font-black tracking-tight text-white leading-none">場地快速簽到導航</h1>
-                    <p class="text-xs sm:text-sm text-amber-400 font-bold mt-1">戶外高對比 · 點擊即達簽到頁</p>
+                    <h1 class="text-lg font-black tracking-wide text-white flex items-center gap-2">
+                        外場巡檢簽到導航
+                        <span id="syncStatusBadge" class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-400/20 text-amber-300 border border-amber-400/40">雲端同步中</span>
+                    </h1>
+                    <p class="text-xs text-slate-400">點擊即開・自動連動 Google 試算表</p>
                 </div>
             </div>
-
-            <!-- 管理場地按鈕 -->
-            <button id="toggleManageBtn" type="button" class="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-100 border border-slate-600 font-bold text-sm flex items-center gap-1.5 transition shrink-0">
+            <button id="toggleManageBtn" type="button" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs flex items-center gap-1.5 transition active:scale-95 shadow-sm">
                 <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                 </svg>
-                <span>新增/管理</span>
+                <span>新增場地</span>
             </button>
         </div>
     </header>
 
-    <!-- 主內容區 -->
-    <main class="flex-1 max-w-3xl w-full mx-auto px-4 py-5 space-y-5">
-
-        <!-- 摺疊式：新增/管理場地面板 -->
-        <section id="managePanel" class="hidden bg-surface-900 border-2 border-amber-400/60 rounded-2xl p-4 sm:p-5 shadow-2xl space-y-4">
-            <div class="flex items-center justify-between border-b border-slate-700 pb-3">
-                <h2 class="text-lg font-black text-amber-400 flex items-center gap-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
-                    </svg>
-                    新增或管理自訂場地
-                </h2>
-                <button id="closeManageBtn" type="button" class="text-slate-400 hover:text-white p-1.5 rounded-lg bg-slate-800">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-            </div>
-
-            <!-- 新增場地表單 -->
-            <form id="addVenueForm" class="space-y-3">
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                        <label for="newVenueName" class="block text-sm font-bold text-slate-200 mb-1">場地名稱 <span class="text-rose-400">*</span></label>
-                        <input type="text" id="newVenueName" required placeholder="例如：右昌公園"
-                            class="w-full px-3.5 py-2.5 rounded-xl bg-surface-950 border-2 border-slate-700 focus:border-amber-400 focus:outline-none text-white font-bold placeholder-slate-500">
-                    </div>
-                    <div>
-                        <label for="newVenueCode" class="block text-sm font-bold text-slate-200 mb-1">場地代碼 <span class="text-rose-400">*</span></label>
-                        <input type="text" id="newVenueCode" required placeholder="例如：PSS_HB230"
-                            class="w-full px-3.5 py-2.5 rounded-xl bg-surface-950 border-2 border-slate-700 focus:border-amber-400 focus:outline-none text-white font-mono font-bold placeholder-slate-500 uppercase">
-                    </div>
-                </div>
-                <div>
-                    <label for="newVenueUrl" class="block text-sm font-bold text-slate-200 mb-1">簽到網址（留空可依代碼自動產生預設網址）</label>
-                    <input type="url" id="newVenueUrl" placeholder="https://outsourced-signin.pss-group.xyz/check-in-system/PSS_HB230/login"
-                        class="w-full px-3.5 py-2.5 rounded-xl bg-surface-950 border-2 border-slate-700 focus:border-amber-400 focus:outline-none text-white font-mono text-sm placeholder-slate-500">
-                </div>
-                <div class="pt-1 flex flex-wrap items-center gap-2.5">
-                    <button type="submit" class="flex-1 sm:flex-none px-5 py-3 rounded-xl bg-amber-400 hover:bg-amber-300 active:scale-95 text-slate-950 font-black text-base transition shadow-md">
-                        + 儲存新增場地
-                    </button>
-                    <button type="button" id="exportDataBtn" class="px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 font-bold text-sm transition">
-                        複製備份 JSON
-                    </button>
-                    <button type="button" id="resetDataBtn" class="px-4 py-3 rounded-xl bg-rose-950/70 hover:bg-rose-900 text-rose-200 border border-rose-700/70 font-bold text-sm transition">
-                        重置為預設 11 場地
-                    </button>
-                </div>
-            </form>
-        </section>
+    <!-- 主要內容區 -->
+    <main class="max-w-4xl mx-auto px-4 py-6 w-full flex-1 space-y-6">
 
         <!-- 控制區塊：快速下拉選單 + 即時搜尋框 -->
-        <section class="bg-surface-900 border-2 border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xl space-y-4">
+        <section class="bg-surface-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xl space-y-4">
             
             <!-- 1. 快速下拉選單與自動跳轉開關 -->
             <div class="space-y-2.5">
-                <div class="flex flex-wrap items-center justify-between gap-2">
-                    <label for="quickSelect" class="text-base font-black text-amber-400 flex items-center gap-1.5">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+                <div class="flex items-center justify-between">
+                    <label for="quickSelect" class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                        <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
                         </svg>
-                        快速下拉選單
+                        <span>快速下拉選單</span>
                     </label>
-                    
-                    <!-- 選取後自動跳轉開關 -->
-                    <label class="inline-flex items-center gap-2.5 cursor-pointer bg-surface-950 px-3 py-1.5 rounded-xl border border-slate-700 select-none">
+                    <label class="inline-flex items-center gap-2 cursor-pointer select-none">
+                        <span class="text-xs text-slate-400">選取後自動跳轉</span>
                         <input type="checkbox" id="autoJumpToggle" class="sr-only peer" checked>
-                        <div class="relative w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
-                        <span class="text-xs sm:text-sm font-bold text-slate-200">選取後自動跳轉</span>
+                        <div class="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-400 relative"></div>
                     </label>
                 </div>
-
-                <div class="flex flex-col sm:flex-row gap-2.5">
+                <div class="flex gap-2">
                     <div class="relative flex-1">
-                        <select id="quickSelect" class="w-full appearance-none px-4 py-3.5 pr-10 rounded-xl bg-surface-950 border-2 border-slate-600 focus:border-amber-400 focus:outline-none text-white text-lg font-black cursor-pointer">
-                            <option value="">-- 請選擇場地直接前往 --</option>
+                        <select id="quickSelect" class="w-full bg-surface-950 border border-slate-700 text-white font-medium rounded-xl px-3.5 py-3 appearance-none focus:outline-none focus:border-amber-400 transition pr-10 text-sm">
+                            <option value="">-- 載入雲端場地中... --</option>
                         </select>
-                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-amber-400">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+                        <div class="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-slate-400">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
                             </svg>
                         </div>
                     </div>
-                    <button id="quickGoBtn" type="button" class="px-6 py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-slate-950 font-black text-lg flex items-center justify-center gap-2 transition shadow-lg shadow-emerald-500/20 shrink-0">
-                        <span>開啟簽到</span>
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-                        </svg>
+                    <button type="button" id="quickGoBtn" class="px-4 py-3 bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold rounded-xl transition active:scale-95 shadow-md flex items-center justify-center shrink-0 text-sm">
+                        開啟
                     </button>
                 </div>
             </div>
 
-            <hr class="border-slate-800">
-
-            <!-- 2. 即時搜尋框 -->
-            <div class="space-y-2">
-                <div class="flex items-center justify-between">
-                    <label for="searchInput" class="text-base font-black text-slate-200 flex items-center gap-1.5">
-                        <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-                        </svg>
-                        關鍵字即時搜尋
-                    </label>
-                    <span id="resultCount" class="text-xs font-bold px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300">顯示 11 個場地</span>
-                </div>
-
-                <div class="relative">
-                    <input type="text" id="searchInput" autocomplete="off" placeholder="輸入場地名稱（如：常德）或代碼（如：225）..."
-                        class="w-full pl-11 pr-12 py-3.5 rounded-xl bg-surface-950 border-2 border-slate-600 focus:border-amber-400 focus:outline-none text-white text-lg font-bold placeholder-slate-500">
-                    <!-- 搜尋放大鏡 -->
-                    <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-                        </svg>
-                    </div>
-                    <!-- 一鍵清除按鈕 -->
-                    <button id="clearSearchBtn" type="button" title="清除搜尋" class="hidden absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-white">
-                        <span class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </span>
-                    </button>
-                </div>
-            </div>
-        </section>
-
-        <!-- 最近使用快捷列 (若有紀錄則顯示) -->
-        <section id="recentSection" class="hidden bg-amber-400/10 border-2 border-amber-400/40 rounded-2xl p-4 space-y-2.5">
-            <div class="flex items-center justify-between">
-                <h3 class="text-sm font-black text-amber-300 flex items-center gap-1.5">
+            <!-- 2. 即時搜尋輸入框 -->
+            <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
                     </svg>
-                    最近點擊簽到場地
-                </h3>
-                <button id="clearRecentBtn" type="button" class="text-xs text-slate-400 hover:text-slate-200 underline">清除紀錄</button>
-            </div>
-            <div id="recentContainer" class="flex flex-wrap gap-2"></div>
-        </section>
-
-        <!-- 3. 場地大按鈕卡片清單 -->
-        <section class="space-y-3">
-            <div id="venueGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <!-- 動態產生場地卡片 -->
-            </div>
-
-            <!-- 查無結果提示 -->
-            <div id="emptyState" class="hidden text-center py-12 px-4 bg-surface-900 border-2 border-dashed border-slate-700 rounded-2xl">
-                <p class="text-xl font-black text-slate-300 mb-2">找不到符合的場地</p>
-                <p class="text-sm text-slate-400 mb-4">請嘗試輸入其他場地關鍵字或代碼數字</p>
-                <button id="emptyClearBtn" type="button" class="px-5 py-2.5 rounded-xl bg-amber-400 text-slate-950 font-black text-sm">
-                    顯示全部場地
+                </div>
+                <input type="text" id="searchInput" placeholder="輸入場地名稱或代碼快速篩選..." class="w-full bg-surface-950 border border-slate-700 text-white placeholder-slate-500 text-sm rounded-xl pl-10 pr-9 py-3 focus:outline-none focus:border-amber-400 transition">
+                <button type="button" id="clearSearchBtn" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-white hidden">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
                 </button>
             </div>
         </section>
 
+        <!-- 最近使用紀錄捷徑列 -->
+        <section id="recentSection" class="hidden space-y-2">
+            <div class="flex items-center justify-between px-1">
+                <span class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    最近使用紀錄
+                </span>
+                <button type="button" id="clearRecentBtn" class="text-xs text-slate-400 hover:text-rose-400 transition">清除紀錄</button>
+            </div>
+            <div id="recentContainer" class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none"></div>
+        </section>
+
+        <!-- 場地清單卡片區 -->
+        <section class="space-y-3">
+            <div class="flex items-center justify-between px-1">
+                <span id="resultCount" class="text-xs font-bold uppercase tracking-wider text-slate-400">載入中...</span>
+                <button type="button" id="refreshCloudBtn" class="text-xs text-amber-400 hover:underline flex items-center gap-1">
+                    <span>🔄 重新整理雲端</span>
+                </button>
+            </div>
+
+            <!-- 卡片網格 -->
+            <div id="venueGrid" class="grid grid-cols-1 gap-3"></div>
+
+            <!-- 無搜尋結果提示 -->
+            <div id="emptyState" class="hidden py-12 text-center bg-surface-900 border border-slate-800 rounded-2xl p-6">
+                <div class="text-3xl mb-2">🔍</div>
+                <h3 class="text-base font-bold text-white">找不到符合的場地</h3>
+                <p class="text-xs text-slate-400 mt-1">請嘗試其他關鍵字，或點擊上方「新增場地」加入自訂項目</p>
+                <button type="button" id="emptyClearBtn" class="mt-4 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition">清除搜尋條件</button>
+            </div>
+        </section>
     </main>
 
-    <!-- 底部提示 -->
-    <footer class="max-w-3xl w-full mx-auto px-4 py-6 text-center text-xs text-slate-500 space-y-1">
-        <p>點擊任一場地卡片將直接於新分頁開啟該場地專屬簽到系統</p>
-        <p>自訂新增場地與使用紀錄皆安全儲存於您的瀏覽器本機空間</p>
-    </footer>
+    <!-- 新增場地滑出/彈出管理面板 -->
+    <div id="managePanel" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-surface-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-5">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-black text-white flex items-center gap-2">
+                    <span>➕ 新增場地至雲端試算表</span>
+                </h3>
+                <button type="button" id="closeManageBtn" class="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center">✕</button>
+            </div>
 
-    <!-- 自訂通知 Toast (取代 alert) -->
-    <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-all duration-200 translate-y-3">
-        <div id="toastInner" class="px-5 py-3 rounded-xl bg-slate-900 border-2 border-amber-400 text-white font-bold text-sm shadow-2xl flex items-center gap-2.5 whitespace-nowrap">
-            <span id="toastIcon" class="text-amber-400">✔</span>
-            <span id="toastText">訊息提示</span>
+            <form id="addVenueForm" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">場地名稱 <span class="text-rose-400">*</span></label>
+                    <input type="text" id="newVenueName" required placeholder="例如：安泰" class="w-full bg-surface-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-amber-400">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">場地代碼 <span class="text-rose-400">*</span></label>
+                    <input type="text" id="newVenueCode" required placeholder="例如：PSS_HB388" class="w-full bg-surface-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-amber-400 font-mono">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">簽到網址 (選填，若留空將自動帶入標準格式)</label>
+                    <input type="url" id="newVenueUrl" placeholder="https://..." class="w-full bg-surface-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-amber-400 font-mono">
+                </div>
+                <div class="pt-2 flex gap-3">
+                    <button type="button" id="closeManageBtn2" class="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-bold transition">取消</button>
+                    <button type="submit" id="submitAddBtn" class="flex-1 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-sm font-black transition shadow-md">確認新增並同步</button>
+                </div>
+            </form>
         </div>
     </div>
 
-    <!-- 自訂確認對話框 Modal (取代 confirm) -->
-    <div id="confirmModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-surface-900 border-2 border-slate-600 rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl">
-            <h3 id="confirmTitle" class="text-lg font-black text-white">確認操作</h3>
-            <p id="confirmMessage" class="text-sm text-slate-300 leading-relaxed">確定要執行此操作嗎？</p>
-            <div class="flex justify-end gap-2.5 pt-2">
-                <button id="confirmCancelBtn" type="button" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-sm">取消</button>
-                <button id="confirmOkBtn" type="button" class="px-4 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-400 text-slate-950 font-black text-sm">確定執行</button>
+    <!-- 自訂確認彈窗 -->
+    <div id="confirmModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-surface-900 border border-slate-800 rounded-2xl max-w-xs w-full p-5 text-center space-y-4 shadow-2xl">
+            <h4 id="confirmTitle" class="text-base font-black text-white">確認提示</h4>
+            <p id="confirmMessage" class="text-xs text-slate-300"></p>
+            <div class="flex gap-2 pt-1">
+                <button type="button" id="confirmCancelBtn" class="flex-1 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold">取消</button>
+                <button type="button" id="confirmOkBtn" class="flex-1 py-2 rounded-xl bg-rose-500 hover:bg-rose-400 text-slate-950 text-xs font-black">確定</button>
             </div>
         </div>
     </div>
 
-    <script>
-        /**
-         * 預設 11 個場地資料
-        const API_URL = "https://script.google.com/macros/s/AKfycbwM79E8aO7ZUrGToDMSgV9g9M1hv1hLHaY_mzmHI4iLJ4AxCaw0e708TZ6JlvmI1LamxA/exec";
+    <!-- 底部浮動 Toast 訊息 -->
+    <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 bg-slate-900 border border-slate-700 text-white px-4 py-2.5 rounded-2xl shadow-2xl flex items-center gap-2.5 transition-all duration-200 opacity-0 translate-y-3 pointer-events-none text-xs font-bold">
+        <span id="toastIcon">✔</span>
+        <span id="toastText">訊息通知</span>
+    </div>
 
+    <!-- JavaScript 核心程式 -->
+    <script>
+        // 您的 Google Apps Script 雲端部署網址
+        const API_URL = "https://script.google.com/macros/s/AKfycbwM79E8a07ZUrGToDMSgV9g9M1hv1hLHaY_mzmHI4iLJ4AxCaw0e708TZ6JlvmI1LamxA/exec";
+
+        // 本地備用預設場地（當雲端無法連線時作為備援）
         const DEFAULT_VENUES = [
-            { id: 'v1', name: '安泰', code: 'PSS_HB388', url: 'https://outsourced-signin.pss-group.xyz/check-in-system/PSS_HB388/login', isCustom: false },
-            { id: 'v2', name: '立民', code: 'PSS_HB229', url: 'https://outsourced-signin.pss-group.xyz/check-in-system/PSS_HB229/login', isCustom: false },
-            { id: 'v3', name: '常順', code: 'PSS_HB224', url: 'https://outsourced-signin.pss-group.xyz/check-in-system/PSS_HB224/login', isCustom: false },
-            { id: 'v4', name: '常德', code: 'PSS_HB225', url: 'https://outsourced-signin.pss-group.xyz/check-in-system/PSS_HB225/login', isCustom: false },
-            { id: 'v5', name: '運動公園', code: 'PSS_HB227', url: 'https://outsourced-signin.pss-group.xyz/check-in-system/PSS_HB227/login', isCustom: false },
-            { id: 'v6', name: '清豐', code: 'PSS_HB219', url: 'https://outsourced-signin.pss-group.xyz/check-in-system/PSS_HB219/login', isCustom: false },
-            { id: 'v7', name: '三山', code: 'PSS_HB228', url: 'https://outsourced-signin.pss-group.xyz/check-in-system/PSS_HB228/login', isCustom: false },
-            { id: 'v8', name: '加昌', code: 'PSS_HB223', url: 'https://outsourced-signin.pss-group.xyz/check-in-system/PSS_HB223/login', isCustom: false },
-            { id: 'v9', name: '後昌', code: 'PSS_HB220', url: 'https://outsourced-signin.pss-group.xyz/check-in-system/PSS_HB220/login', isCustom: false },
-            { id: 'v10', name: '樂群', code: 'PSS_HB222', url: 'https://outsourced-signin.pss-group.xyz/check-in-system/PSS_HB222/login', isCustom: false },
-            { id: 'v11', name: '惠民', code: 'PSS_HB226', url: 'https://outsourced-signin.pss-group.xyz/check-in-system/PSS_HB226/login', isCustom: false }
+            { id: 'v1', name: '安泰', code: 'PSS_HB388', url: 'https://outsourced-signin.pss-group.xyz/check-in-system/PSS_HB388/login' },
+            { id: 'v2', name: '立民', code: 'PSS_HB229', url: 'https://outsourced-signin.pss-group.xyz/check-in-system/PSS_HB229/login' },
+            { id: 'v3', name: '常順', code: 'PSS_HB224', url: 'https://outsourced-signin.pss-group.xyz/check-in-system/PSS_HB224/login' },
+            { id: 'v4', name: '常德', code: 'PSS_HB225', url: 'https://outsourced-signin.pss-group.xyz/check-in-system/PSS_HB225/login' },
+            { id: 'v5', name: '運動公園', code: 'PSS_HB227', url: 'https://outsourced-signin.pss-group.xyz/check-in-system/PSS_HB227/login' },
+            { id: 'v6', name: '清豐', code: 'PSS_HB219', url: 'https://outsourced-signin.pss-group.xyz/check-in-system/PSS_HB219/login' },
+            { id: 'v7', name: '三山', code: 'PSS_HB228', url: 'https://outsourced-signin.pss-group.xyz/check-in-system/PSS_HB228/login' },
+            { id: 'v8', name: '加昌', code: 'PSS_HB223', url: 'https://outsourced-signin.pss-group.xyz/check-in-system/PSS_HB223/login' },
+            { id: 'v9', name: '後昌', code: 'PSS_HB220', url: 'https://outsourced-signin.pss-group.xyz/check-in-system/PSS_HB220/login' },
+            { id: 'v10', name: '樂群', code: 'PSS_HB222', url: 'https://outsourced-signin.pss-group.xyz/check-in-system/PSS_HB222/login' },
+            { id: 'v11', name: '惠民', code: 'PSS_HB226', url: 'https://outsourced-signin.pss-group.xyz/check-in-system/PSS_HB226/login' }
         ];
 
-        // LocalStorage 鍵值
         const STORAGE_KEYS = {
-            VENUES: 'pss_checkin_venues_v1',
-            RECENT: 'pss_checkin_recent_v1',
-            AUTO_JUMP: 'pss_checkin_autojump_v1'
+            RECENT: 'pss_checkin_recent_v2',
+            AUTO_JUMP: 'pss_checkin_autojump_v2'
         };
 
         // 應用程式狀態
@@ -279,7 +217,7 @@
         let searchQuery = '';
         let toastTimer = null;
 
-        // DOM 元素參考
+        // DOM 元素
         const searchInput = document.getElementById('searchInput');
         const clearSearchBtn = document.getElementById('clearSearchBtn');
         const quickSelect = document.getElementById('quickSelect');
@@ -292,41 +230,62 @@
         const recentSection = document.getElementById('recentSection');
         const recentContainer = document.getElementById('recentContainer');
         const clearRecentBtn = document.getElementById('clearRecentBtn');
+        const syncStatusBadge = document.getElementById('syncStatusBadge');
 
-        // 管理面板元素
         const toggleManageBtn = document.getElementById('toggleManageBtn');
         const closeManageBtn = document.getElementById('closeManageBtn');
+        const closeManageBtn2 = document.getElementById('closeManageBtn2');
         const managePanel = document.getElementById('managePanel');
         const addVenueForm = document.getElementById('addVenueForm');
         const newVenueName = document.getElementById('newVenueName');
         const newVenueCode = document.getElementById('newVenueCode');
         const newVenueUrl = document.getElementById('newVenueUrl');
-        const exportDataBtn = document.getElementById('exportDataBtn');
-        const resetDataBtn = document.getElementById('resetDataBtn');
+        const refreshCloudBtn = document.getElementById('refreshCloudBtn');
 
         /**
-         * 初始化應用程式
+         * 初始化
          */
-        function init() {
-            loadState();
-            renderAll();
+        async function init() {
+            loadLocalPreferences();
+            await fetchVenuesFromCloud();
             bindEvents();
         }
 
         /**
-         * 從 localStorage 載入資料
+         * 從 Google 試算表（雲端）載入資料
          */
-        function loadState() {
+        async function fetchVenuesFromCloud() {
+            syncStatusBadge.textContent = '雲端同步中...';
+            syncStatusBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-amber-400/20 text-amber-300 border border-amber-400/40 animate-pulse';
+            
             try {
-                const savedVenues = localStorage.getItem(STORAGE_KEYS.VENUES);
-                venues = savedVenues ? JSON.parse(savedVenues) : [...DEFAULT_VENUES];
-                if (!Array.isArray(venues) || venues.length === 0) {
-                    venues = [...DEFAULT_VENUES];
+                const response = await fetch(API_URL);
+                if (!response.ok) throw new Error('連線失敗');
+                const data = await response.json();
+                
+                if (Array.isArray(data) && data.length > 0) {
+                    venues = data.map((item, index) => ({
+                        id: 'cloud_' + index,
+                        name: item.name,
+                        code: item.code,
+                        url: item.url
+                    }));
+                    syncStatusBadge.textContent = '已連線雲端';
+                    syncStatusBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-400/20 text-emerald-300 border border-emerald-400/40';
+                } else {
+                    throw new Error('資料為空');
                 }
-            } catch (e) {
+            } catch (err) {
+                console.warn('無法連線雲端試算表，改用預設清單', err);
                 venues = [...DEFAULT_VENUES];
+                syncStatusBadge.textContent = '離線/預設模式';
+                syncStatusBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-rose-400/20 text-rose-300 border border-rose-400/40';
             }
 
+            renderAll();
+        }
+
+        function loadLocalPreferences() {
             try {
                 const savedRecent = localStorage.getItem(STORAGE_KEYS.RECENT);
                 recentIds = savedRecent ? JSON.parse(savedRecent) : [];
@@ -344,24 +303,9 @@
             }
         }
 
-        /**
-         * 儲存場地列表至 localStorage
-         */
-        function saveVenues() {
-            try {
-                localStorage.setItem(STORAGE_KEYS.VENUES, JSON.stringify(venues));
-            } catch (e) {
-                showToast('儲存失敗，請檢查瀏覽器空間設定', '⚠️');
-            }
-        }
-
-        /**
-         * 記錄最近使用的場地並開啟連結
-         */
         function openVenueCheckIn(venue) {
             if (!venue) return;
 
-            // 更新最近使用紀錄（最多保留 4 筆不重複）
             recentIds = [venue.id, ...recentIds.filter(id => id !== venue.id)].slice(0, 4);
             try {
                 localStorage.setItem(STORAGE_KEYS.RECENT, JSON.stringify(recentIds));
@@ -370,23 +314,16 @@
             renderRecent();
             renderCards();
 
-            // 在新分頁開啟簽到系統
             window.open(venue.url, '_blank', 'noopener,noreferrer');
             showToast(`正在前往【${venue.name}】簽到系統`, '🚀');
         }
 
-        /**
-         * 渲染所有畫面區塊
-         */
         function renderAll() {
             renderSelectOptions();
             renderRecent();
             renderCards();
         }
 
-        /**
-         * 渲染快速下拉選單選項
-         */
         function renderSelectOptions() {
             const currentVal = quickSelect.value;
             quickSelect.innerHTML = '<option value="">-- 請選擇場地直接前往 --</option>';
@@ -403,9 +340,6 @@
             }
         }
 
-        /**
-         * 渲染最近點擊場地快捷列
-         */
         function renderRecent() {
             const validRecents = recentIds
                 .map(id => venues.find(v => v.id === id))
@@ -433,9 +367,6 @@
             });
         }
 
-        /**
-         * 渲染場地卡片清單
-         */
         function renderCards() {
             const keyword = searchQuery.trim().toLowerCase();
             const filtered = venues.filter(v => {
@@ -465,7 +396,6 @@
                         : 'bg-surface-900 hover:bg-slate-800/90 border-slate-700 hover:border-amber-400/80'
                 }`;
 
-                // 左側主點擊區（整塊為大按鈕，直接開啟新分頁）
                 const mainLink = document.createElement('a');
                 mainLink.href = venue.url;
                 mainLink.target = '_blank';
@@ -483,7 +413,6 @@
                                 ${escapeHtml(venue.name)}
                             </span>
                             ${isLastUsed ? '<span class="px-2 py-0.5 text-xs font-black rounded-md bg-amber-400 text-slate-950">最近使用</span>' : ''}
-                            ${venue.isCustom ? '<span class="px-2 py-0.5 text-xs font-bold rounded-md bg-sky-500/20 text-sky-300 border border-sky-500/40">自訂</span>' : ''}
                         </div>
                         <div class="flex items-center gap-2 text-sm font-mono font-bold text-slate-300">
                             <span class="px-2 py-0.5 rounded bg-surface-950 border border-slate-700 text-amber-400">${escapeHtml(venue.code)}</span>
@@ -496,11 +425,9 @@
                     </div>
                 `;
 
-                // 右側輔助功能區（複製網址 + 若為自訂場地則顯示刪除按鈕）
                 const actionCol = document.createElement('div');
                 actionCol.className = 'flex flex-col border-l border-slate-700/80 bg-surface-950/60 divide-y divide-slate-800 shrink-0';
 
-                // 複製網址按鈕
                 const copyBtn = document.createElement('button');
                 copyBtn.type = 'button';
                 copyBtn.title = '複製簽到網址';
@@ -517,49 +444,19 @@
                 });
                 actionCol.appendChild(copyBtn);
 
-                // 自訂場地提供刪除鈕
-                if (venue.isCustom) {
-                    const delBtn = document.createElement('button');
-                    delBtn.type = 'button';
-                    delBtn.title = '刪除此自訂場地';
-                    delBtn.className = 'px-3.5 py-2.5 hover:bg-rose-950 text-rose-400 hover:text-rose-300 flex items-center justify-center transition';
-                    delBtn.innerHTML = `
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-                        </svg>
-                    `;
-                    delBtn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        showConfirm('刪除自訂場地', `確定要刪除「${venue.name}（${venue.code}）」嗎？`, () => {
-                            venues = venues.filter(item => item.id !== venue.id);
-                            recentIds = recentIds.filter(id => id !== venue.id);
-                            saveVenues();
-                            localStorage.setItem(STORAGE_KEYS.RECENT, JSON.stringify(recentIds));
-                            renderAll();
-                            showToast(`已刪除場地【${venue.name}】`, '🗑️');
-                        });
-                    });
-                    actionCol.appendChild(delBtn);
-                }
-
                 card.appendChild(mainLink);
                 card.appendChild(actionCol);
                 venueGrid.appendChild(card);
             });
         }
 
-        /**
-         * 綁定互動事件
-         */
         function bindEvents() {
-            // 即時搜尋輸入
             searchInput.addEventListener('input', (e) => {
                 searchQuery = e.target.value;
                 clearSearchBtn.classList.toggle('hidden', searchQuery.length === 0);
                 renderCards();
             });
 
-            // 一鍵清除搜尋
             const clearSearchHandler = () => {
                 searchQuery = '';
                 searchInput.value = '';
@@ -570,7 +467,6 @@
             clearSearchBtn.addEventListener('click', clearSearchHandler);
             emptyClearBtn.addEventListener('click', clearSearchHandler);
 
-            // 下拉選單變更事件
             quickSelect.addEventListener('change', () => {
                 const selectedId = quickSelect.value;
                 if (!selectedId) return;
@@ -580,7 +476,6 @@
                 }
             });
 
-            // 手動點擊「開啟簽到」按鈕
             quickGoBtn.addEventListener('click', () => {
                 const selectedId = quickSelect.value;
                 if (!selectedId) {
@@ -592,7 +487,6 @@
                 if (venue) openVenueCheckIn(venue);
             });
 
-            // 儲存自動跳轉偏好設定
             autoJumpToggle.addEventListener('change', () => {
                 try {
                     localStorage.setItem(STORAGE_KEYS.AUTO_JUMP, String(autoJumpToggle.checked));
@@ -600,7 +494,6 @@
                 showToast(autoJumpToggle.checked ? '已開啟：選取場地自動跳轉' : '已關閉：選取後需按開啟按鈕', '⚙️');
             });
 
-            // 清除最近使用紀錄
             clearRecentBtn.addEventListener('click', () => {
                 recentIds = [];
                 try {
@@ -611,19 +504,22 @@
                 showToast('已清除最近使用紀錄', '🧹');
             });
 
-            // 展開/收合管理面板
             toggleManageBtn.addEventListener('click', () => {
-                managePanel.classList.toggle('hidden');
-                if (!managePanel.classList.contains('hidden')) {
-                    newVenueName.focus();
-                }
+                managePanel.classList.remove('hidden');
+                newVenueName.focus();
             });
-            closeManageBtn.addEventListener('click', () => {
-                managePanel.classList.add('hidden');
+            const closeModal = () => managePanel.classList.add('hidden');
+            closeManageBtn.addEventListener('click', closeModal);
+            closeManageBtn2.addEventListener('click', closeModal);
+
+            refreshCloudBtn.addEventListener('click', async () => {
+                showToast('正在重新同步雲端資料...', '🔄');
+                await fetchVenuesFromCloud();
+                showToast('雲端資料已更新！', '✅');
             });
 
-            // 新增場地表單送出
-            addVenueForm.addEventListener('submit', (e) => {
+            // 新增場地並寫入 Google 試算表
+            addVenueForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const name = newVenueName.value.trim();
                 const code = newVenueCode.value.trim().toUpperCase();
@@ -634,57 +530,34 @@
                     return;
                 }
 
-                // 若未填寫網址，依標準格式自動產生
                 if (!url) {
                     url = `https://outsourced-signin.pss-group.xyz/check-in-system/${encodeURIComponent(code)}/login`;
                 }
 
-                const newVenue = {
-                    id: 'custom_' + Date.now(),
-                    name,
-                    code,
-                    url,
-                    isCustom: true
-                };
+                showToast('正在同步寫入 Google 試算表...', '⏳');
 
-                venues.unshift(newVenue);
-                saveVenues();
-                renderAll();
+                try {
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        mode: 'no-cors', // 配合 Google Apps Script 重新導向
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: JSON.stringify({ action: "add", name, code, url })
+                    });
 
-                addVenueForm.reset();
-                managePanel.classList.add('hidden');
-                showToast(`已成功新增場地【${name}】`, '✅');
-            });
-
-            // 匯出 JSON 備份
-            exportDataBtn.addEventListener('click', () => {
-                const jsonStr = JSON.stringify(venues, null, 2);
-                copyTextToClipboard(jsonStr, '已複製全部場地資料（JSON 格式）');
-            });
-
-            // 重置為預設 11 場地
-            resetDataBtn.addEventListener('click', () => {
-                showConfirm(
-                    '重置場地清單',
-                    '確定要清除所有自訂場地，並還原為系統預設的 11 個場地嗎？',
-                    () => {
-                        venues = [...DEFAULT_VENUES];
-                        recentIds = [];
-                        saveVenues();
-                        try {
-                            localStorage.removeItem(STORAGE_KEYS.RECENT);
-                        } catch (e) {}
-                        renderAll();
+                    // 重新抓取雲端最新資料
+                    setTimeout(async () => {
+                        await fetchVenuesFromCloud();
+                        addVenueForm.reset();
                         managePanel.classList.add('hidden');
-                        showToast('已重置為預設 11 個場地', '🔄');
-                    }
-                );
+                        showToast(`已成功新增【${name}】至試算表！`, '✅');
+                    }, 1500);
+
+                } catch (err) {
+                    showToast('寫入雲端失敗，請檢查網路連線', '❌');
+                }
             });
         }
 
-        /**
-         * 跨瀏覽器安全複製文字至剪貼簿 (相容 iframe 環境)
-         */
         function copyTextToClipboard(text, successMsg) {
             const textarea = document.createElement('textarea');
             textarea.value = text;
@@ -696,15 +569,12 @@
                 document.execCommand('copy');
                 showToast(successMsg, '📋');
             } catch (err) {
-                showToast('複製失敗，請手動選取複製', '⚠️');
+                showToast('複製失敗', '⚠️');
             } finally {
                 document.body.removeChild(textarea);
             }
         }
 
-        /**
-         * 顯示底部 Toast 通知
-         */
         function showToast(message, icon = '✔') {
             const toast = document.getElementById('toast');
             const toastText = document.getElementById('toastText');
@@ -723,36 +593,6 @@
             }, 2600);
         }
 
-        /**
-         * 顯示自訂確認彈窗
-         */
-        function showConfirm(title, message, onConfirm) {
-            const modal = document.getElementById('confirmModal');
-            const titleEl = document.getElementById('confirmTitle');
-            const msgEl = document.getElementById('confirmMessage');
-            const cancelBtn = document.getElementById('confirmCancelBtn');
-            const okBtn = document.getElementById('confirmOkBtn');
-
-            titleEl.textContent = title;
-            msgEl.textContent = message;
-            modal.classList.remove('hidden');
-
-            const cleanup = () => {
-                modal.classList.add('hidden');
-                cancelBtn.onclick = null;
-                okBtn.onclick = null;
-            };
-
-            cancelBtn.onclick = cleanup;
-            okBtn.onclick = () => {
-                cleanup();
-                if (typeof onConfirm === 'function') onConfirm();
-            };
-        }
-
-        /**
-         * HTML 特殊字元轉義防止 XSS
-         */
         function escapeHtml(str) {
             return String(str)
                 .replace(/&/g, '&amp;')
@@ -762,7 +602,6 @@
                 .replace(/'/g, '&#39;');
         }
 
-        // 啟動應用
         window.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
